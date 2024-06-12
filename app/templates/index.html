@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Каталог книг</h1>
+
+<div class="row cards text-center px-2">
+  {% for book in books %}
+    <div class="col-xl-4 col-lg-6 col-md-12 sm-12 py-2">
+      <div class=" book-card ">
+        <img src="{{ url_for('static', filename='images/' ~ book.filename ~ '.' ~ book.mimetype) }}" class="img-fluid" alt="{{ book.name_book }}">
+        <div class="mt-3 mb-2">
+          <h5 class="card-title text-danger">{{ book.name_book }}</h5>
+        </div>
+        <p>
+          <strong>Жанры:</strong> {{ book.genres }}<br>
+          <strong>Год:</strong> {{ book.year }}<br>
+          <strong>Средняя оценка:</strong> {{ book.avg_rating or 0 }}<br>
+          <strong>Количество рецензий:</strong> {{ book.review_count }}
+      </p>
+      </div>
+      <div class="card-footer text-center">
+        <a href="" class="btn btn-info m-1">Посмотреть</a>
+        <a href="{{ url_for('books.edit_books', id_book=book.id_book) }}" class="btn btn-primary m-1">Редактировать</a>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModalBook" data-book-id="{{ book.id_book }}" data-name-book="{{ book.name_book }}">Удалить</button>
+      </div>
+    </div>
+  {% endfor %}
+  <div class="card-footer text-center">
+    <a href="{{ url_for('books.new_books') }}" class="btn btn-dark my-5">Добавить книгу</a>
+  </div>
+
+  <div class="modal fade" id="deleteModalBook" tabindex="-1" aria-labelledby="deleteModalBookLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="deleteModalBookLabel">Удаление книги</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите удалить книгу "<span id="bookName"></span>"?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Нет</button>
+          <form method="post" id="deleteModalBookForm">
+            <button type="submit" class="btn btn-danger">Да</button>
+          </form>
+        </div>
+      </div>
+    </div>
+</div> 
+{% from "pagination.html" import render_pagination %}
+{{ render_pagination(pagination, 'index') }}
+{% endblock%}

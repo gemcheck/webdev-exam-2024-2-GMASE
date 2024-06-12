@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+          <img src="{{ url_for('static', filename='images/'  ~ cover_data.filename ~ '.' ~ cover_data.mimetype) }}" class="img-fluid" alt="Обложка книги">
+        </div>
+        <div class="col-md-8">
+            <h1>{{ book.name_book }}</h1>
+            <p><strong>Автор:</strong> {{ book.author }}</p>
+            <p><strong>Год издания:</strong> {{ book.year }}</p>
+            <p><strong>Издатель:</strong> {{ book.publisher }}</p>
+            <p><strong>Количество страниц:</strong> {{ book.pages }}</p>
+            <p><strong>Жанры:</strong> {{ genres}}</p>
+            <div class="mt-3">
+              <strong>Краткое описание</strong>
+              <div class="mt-2">{{ book.short_description | safe }}</div>
+            </div>
+        </div>
+    </div>
+    {% if reviews %}
+    <div class="mt-5">
+        <h3>Рецензии</h3>
+        <div>
+            {% for review in reviews %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ review.username }} - Оценка: {{ review.rating }}/5</h5>
+                        <p class="card-text">{{ review.text }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
