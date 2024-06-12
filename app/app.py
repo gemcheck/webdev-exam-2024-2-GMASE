@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 from flask_migrate import Migrate
 from models import db, Books, Users, Genres, Review, ConnectGenreBook, Covers 
+from auth import bp as auth_bp, init_login_manager
 from books import bp as books_bp
 from sqlalchemy import func
 
@@ -11,6 +12,9 @@ app.config.from_pyfile('config.py')
 db.init_app(app)
 migrate = Migrate(app, db)
 
+init_login_manager(app)
+
+app.register_blueprint(auth_bp)
 app.register_blueprint(books_bp)
 
 # Главная страница с пагинацией

@@ -19,6 +19,21 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Декоратор для разграничения прав доступа, на вход подается 
+# либо 'admin'(доступ только для админа) либо 'admin_moderator' (доступ для админа и библиотекаря)
+def admin_or_moderator(role):
+    def decorator(func):
+        @wraps(func)
+        def decorated(*args, **kwargs):
+            if role == 'admin' and not current_user.is_admin():
+                flash('У вас недостаточно прав для выполнения данного действия', 'danger')
+            elif role == 'admin_moderator' and not (current_user.is_admin() or current_user.is_moderator()):
+                flash('У вас недостаточно прав для выполнения данного действия', 'danger')
+            else:
+                return func(*args, **kwargs)
+            return redirect(url_for('index')) 
+        return decorated
+    return decorator
 
 # Сохрание обложки в таблицу covers
 def save_cover_file(file):
@@ -55,6 +70,8 @@ def save_cover_file(file):
 
 # Добавление новой книги
 @bp.route('/new_books', methods=['GET', 'POST'])
+@login_required
+@admin_or_moderator('admin')
 def new_books():
     if request.method == 'POST':
         try:
@@ -107,6 +124,8 @@ def new_books():
 
 # Редактирование книги
 @bp.route('/edit_books/<int:id_book>', methods=['GET', 'POST'])
+@login_required
+@admin_or_moderator('admin_moderator')
 def edit_books(id_book):
     book = db.session.query(Books).get_or_404(id_book)
     
@@ -132,3 +151,64 @@ def edit_books(id_book):
     genres = db.session.query(Genres).all()
     book_genres = [cg.id_genre for cg in db.session.query(ConnectGenreBook).filter_by(id_book=id_book).all()]
     return render_template('books/edit_books.html', book=book, genres=genres, book_genres=book_genres)
+
+# Страница просмотра
+@bp.route('/view_books/<int:id_book>')
+@login_required
+def view_books(id_book):
+    book = db.session.query(Books).get_or_404(id_book)
+    reviews = db.session.query(Review).filter_by(id_book=id_book).all()
+    
+    book.short_description = markdown.markdown(book.short_description)
+
+    genre_ids = db.session.query(ConnectGenreBook.id_genre).filter_by(id_book=id_book).all()
+    genres = db.session.query(Genres.name_genre).filter(Genres.id_genre.in_([id[0] for id in genre_ids])).all()
+    genres = ", ".join([genre.name_genre for genre in genres])
+
+    cover_data = db.session.query(Covers.filename, Covers.mimetype).filter_by(id_cover=book.id_cover).first()
+
+    for review in reviews:
+        user = db.session.query(Users).filter_by(id_user=review.id_user).first()
+        review.username = f"{user.lastname} {user.name}" if user else "Unknown"
+
+    return render_template('books/view_books.html', book=book, reviews=reviews, genres=genres, cover_data=cover_data)
+
+# Удаление книги
+@bp.route('<int:id_book>/delete_book', methods=['POST'])
+@login_required
+@admin_or_moderator('admin_moderator')
+def delete_book(id_book):
+    book = db.session.query(Books).get_or_404(id_book)
+    id_cover = book.id_cover
+
+    try:
+        # Обертывание операций удаления в блок with db.session.no_autoflush предотвращает автоматическую 
+        # синхронизацию изменений до тех пор, пока все операции внутри блока не будут завершены. Это необходимо, 
+        # чтобы избежать ошибок, связанных с попытками удаления записей, на которые ссылаются другие записи.
+        with db.session.no_autoflush:
+            db.session.query(Review).filter_by(id_book=id_book).delete()
+            db.session.query(ConnectGenreBook).filter_by(id_book=id_book).delete()
+            db.session.delete(book)
+            
+        db.session.commit()
+
+        if id_cover:
+            cover = db.session.query(Covers).get(book.id_cover)
+            if cover and cover.filename:
+                cover_path = os.path.join('static/images', f'{cover.filename}.{cover.mimetype}')
+                if os.path.exists(cover_path):
+                    os.remove(cover_path)
+                db.session.delete(cover)
+                print("path***", cover_path)
+            db.session.commit()
+
+        flash('Книга успешно удалена', 'success')
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        flash('Ошибка при удалении книги', 'danger')
+        current_app.logger.error(f'Error deleting book: {str(e)}')
+    except ValueError as e:
+        flash(str(e), 'danger')
+
+    return redirect(url_for('index'))
+

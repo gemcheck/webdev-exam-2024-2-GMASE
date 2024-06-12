@@ -128,14 +128,6 @@ def data_upgrades():
                            sa.column('author', sa.String),
                            sa.column('pages', sa.Integer),
                            sa.column('id_cover', sa.Integer))
-    users_table = sa.table('users',
-                           sa.column('id_user', sa.Integer),
-                           sa.column('name', sa.String),
-                           sa.column('lastname', sa.String),
-                           sa.column('middlename', sa.String),
-                           sa.column('login', sa.String),
-                           sa.column('hash_pass', sa.String),
-                           sa.column('id_role', sa.Integer))
     connect_genre_book_table = sa.table('connect_genre_book',
                             sa.column('id_book', sa.Integer),
                             sa.column('id_genre', sa.Integer))
