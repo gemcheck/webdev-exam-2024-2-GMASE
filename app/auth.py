@@ -9,7 +9,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def init_login_manager(app):
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Для выполнения данного действия необходимо пройти процедуру аутентификации'
+    login_manager.login_message = 'Для доступа к данной странице необходимо пройти процедуру аутентификации.'
     login_manager.login_message_category = 'warning'
     login_manager.user_loader(load_user)
     login_manager.init_app(app)
@@ -35,7 +35,7 @@ def login():
                 flash('Невозможно аутентифицироваться с указанными логином и паролем', 'danger')
         else:
             flash('Заполните все поля', 'danger')
-    return render_template('auth/login.html')
+    return render_template('login.html')
 
 # Выход из аккаунта
 @bp.route('/logout')

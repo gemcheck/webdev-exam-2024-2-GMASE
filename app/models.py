@@ -58,7 +58,7 @@ class Review(Base):
     id_review: Mapped[int] = mapped_column(primary_key=True)
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(server_default=sa.sql.func.now())
     id_book: Mapped[int] = mapped_column(ForeignKey('books.id_book', ondelete='CASCADE'), nullable=False)
     id_user: Mapped[int] = mapped_column(ForeignKey('users.id_user', ondelete='CASCADE'), nullable=False)
 

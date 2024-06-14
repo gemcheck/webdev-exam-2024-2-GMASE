@@ -19,21 +19,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Декоратор для разграничения прав доступа, на вход подается 
-# либо 'admin'(доступ только для админа) либо 'admin_moderator' (доступ для админа и библиотекаря)
-def admin_or_moderator(role):
-    def decorator(func):
-        @wraps(func)
-        def decorated(*args, **kwargs):
-            if role == 'admin' and not current_user.is_admin():
-                flash('У вас недостаточно прав для выполнения данного действия', 'danger')
-            elif role == 'admin_moderator' and not (current_user.is_admin() or current_user.is_moderator()):
-                flash('У вас недостаточно прав для выполнения данного действия', 'danger')
-            else:
-                return func(*args, **kwargs)
-            return redirect(url_for('index')) 
-        return decorated
-    return decorator
 
 # Сохрание обложки в таблицу covers
 def save_cover_file(file):
@@ -70,14 +55,12 @@ def save_cover_file(file):
 
 # Добавление новой книги
 @bp.route('/new_books', methods=['GET', 'POST'])
-@login_required
-@admin_or_moderator('admin')
 def new_books():
     if request.method == 'POST':
         try:
             name_book = request.form['name_book']
             year = request.form['year']
-            short_description = bleach.clean(request.form['short_description'])
+            short_description = request.form['short_description']
             publisher = request.form['publisher']
             author = request.form['author']
             pages = request.form['pages']
@@ -89,10 +72,12 @@ def new_books():
             else:
                 cover_id = None
 
+            short_description_html = bleach.clean(markdown.markdown(short_description), tags=[ 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
+
             new_book = Books(
                 name_book=name_book, 
                 year=year, 
-                short_description=short_description, 
+                short_description=short_description_html, 
                 publisher=publisher, 
                 author=author, 
                 pages=pages, 
@@ -124,8 +109,6 @@ def new_books():
 
 # Редактирование книги
 @bp.route('/edit_books/<int:id_book>', methods=['GET', 'POST'])
-@login_required
-@admin_or_moderator('admin_moderator')
 def edit_books(id_book):
     book = db.session.query(Books).get_or_404(id_book)
     
@@ -133,7 +116,8 @@ def edit_books(id_book):
         try:
             book.name_book = request.form['name_book']
             book.year = request.form['year']
-            book.short_description = bleach.clean(request.form['short_description'])
+            short_description = bleach.clean(request.form['short_description'])
+            book.short_description = bleach.clean(markdown.markdown(short_description), tags=[ 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
 
             selected_genre_ids = request.form.getlist('genres')
             db.session.query(ConnectGenreBook).filter(ConnectGenreBook.id_book == id_book).delete()
@@ -154,7 +138,6 @@ def edit_books(id_book):
 
 # Страница просмотра
 @bp.route('/view_books/<int:id_book>')
-@login_required
 def view_books(id_book):
     book = db.session.query(Books).get_or_404(id_book)
     reviews = db.session.query(Review).filter_by(id_book=id_book).all()
@@ -175,8 +158,6 @@ def view_books(id_book):
 
 # Удаление книги
 @bp.route('<int:id_book>/delete_book', methods=['POST'])
-@login_required
-@admin_or_moderator('admin_moderator')
 def delete_book(id_book):
     book = db.session.query(Books).get_or_404(id_book)
     id_cover = book.id_cover
