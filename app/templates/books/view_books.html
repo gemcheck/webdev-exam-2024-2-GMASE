@@ -27,7 +27,7 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">{{ review.username }} - Оценка: {{ review.rating }}/5</h5>
-                        <p class="card-text">{{ review.text }}</p>
+                        <p class="card-text">{{ review.text | safe}}</p>
                     </div>
                 </div>
             {% endfor %}
@@ -45,7 +45,7 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">Оценка: {{ user_review.rating }}/5</h5>
-                        <p class="card-text">{{ user_review.text }}</p>
+                        <p class="card-text">{{ user_review.text | safe }}</p>
                     </div>
                 </div>
             </div>

@@ -61,7 +61,7 @@ def write_review(id_book):
         rating = request.form['rating']
         text = request.form['text']
         
-        sanitized_text = bleach.clean(markdown.markdown(text), tags=['b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
+        sanitized_text = bleach.clean(text)
         
         review = Review(rating=rating, text=sanitized_text, id_book=id_book, id_user=current_user.id_user)
         db.session.add(review)

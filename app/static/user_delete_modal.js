@@ -9,17 +9,3 @@ function modalShownBook(event) {
   form.action = newUrl;
   document.getElementById('bookName').textContent = bookName;
 }
-
-let modalBook = document.getElementById('deleteModalBook');
-modalBook.addEventListener('show.bs.modal', modalShownBook);
-
-document.addEventListener('DOMContentLoaded', function() {
-  var textElement = document.getElementById('text');
-  if (textElement) {
-    new EasyMDE({ element: textElement });
-  }
-  var shortDescriptionElement = document.getElementById('short_description');
-  if (shortDescriptionElement) {
-    new EasyMDE({ element: shortDescriptionElement });
-  }
-});

@@ -20,6 +20,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# Декоратор для разграничения прав доступа, на вход подается 
+# либо 'admin'(доступ только для админа) либо 'admin_moderator' (доступ для админа и библиотекаря)
 def admin_or_moderator(role):
     def decorator(func):
         @wraps(func)
@@ -89,7 +91,7 @@ def new_books():
             else:
                 cover_id = None
             
-            short_description_html = bleach.clean(markdown.markdown(short_description), tags=[ 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
+            short_description_html = bleach.clean(short_description)
 
             new_book = Books(
                 name_book=name_book, 
@@ -114,7 +116,7 @@ def new_books():
                 cover_file.save(cover_path)
 
             flash('Книга успешно добавлена!', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('books.view_books', id_book=new_book.id_book))
         except SQLAlchemyError as e:
             db.session.rollback()
             flash('При сохранении данных возникла ошибка. Проверьте корректность введённых данных.', 'danger')
@@ -136,7 +138,7 @@ def edit_books(id_book):
             book.name_book = request.form['name_book']
             book.year = request.form['year']
             short_description = request.form['short_description']
-            book.short_description = bleach.clean(markdown.markdown(short_description), tags=[ 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
+            book.short_description = bleach.clean(short_description)
 
             selected_genre_ids = request.form.getlist('genres')
             db.session.query(ConnectGenreBook).filter(ConnectGenreBook.id_book == id_book).delete()
@@ -146,7 +148,7 @@ def edit_books(id_book):
 
             db.session.commit()
             flash('Книга успешно обновлена!', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('books.view_books', id_book=id_book))
         except SQLAlchemyError as e:
             db.session.rollback()
             flash('При сохранении данных возникла ошибка. Проверьте корректность введённых данных.', 'danger')
@@ -174,6 +176,8 @@ def view_books(id_book):
         review.username = f"{user.lastname} {user.name}" if user else "Unknown"
 
     user_review = db.session.query(Review).filter_by(id_book=id_book, id_user=current_user.id_user).first() if current_user.is_authenticated else None
+    if user_review:
+        user_review.text = markdown.markdown(user_review.text)
 
     return render_template('books/view_books.html', book=book, reviews=reviews, genres=genres, cover_data=cover_data, user_review=user_review)
 
