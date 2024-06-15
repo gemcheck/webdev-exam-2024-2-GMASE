@@ -42,11 +42,9 @@ class Users(Base,  UserMixin):
    def check_password(self, password):
       return check_password_hash(self.hash_pass, password)
 
-   @property
    def is_admin(self):
         return self.id_role == current_app.config['ADMIN_ROLE_ID']
    
-   @property
    def is_moderator(self):
         return self.id_role == current_app.config['MODERATOR_ROLE_ID']
 

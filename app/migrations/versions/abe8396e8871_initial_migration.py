@@ -52,7 +52,7 @@ def upgrade():
     sa.Column('author', sa.String(length=128), nullable=False),
     sa.Column('pages', sa.Integer(), nullable=False),
     sa.Column('id_cover', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['id_cover'], ['covers.id_cover'], name=op.f('fk_books_id_cover_covers')),
+    sa.ForeignKeyConstraint(['id_cover'], ['covers.id_cover'], name=op.f('fk_books_id_cover_covers'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id_book', name=op.f('pk_books'))
     )
     op.create_table('users',
@@ -63,15 +63,15 @@ def upgrade():
     sa.Column('login', sa.String(length=32), nullable=False),
     sa.Column('hash_pass', sa.String(length=256), nullable=False),
     sa.Column('id_role', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['id_role'], ['roles.id_role'], name=op.f('fk_users_id_role_roles')),
+    sa.ForeignKeyConstraint(['id_role'], ['roles.id_role'], name=op.f('fk_users_id_role_roles'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id_user', name=op.f('pk_users')),
     sa.UniqueConstraint('login', name=op.f('uq_users_login'))
     )
     op.create_table('connect_genre_book',
     sa.Column('id_book', sa.Integer(), nullable=False),
     sa.Column('id_genre', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['id_book'], ['books.id_book'], name=op.f('fk_connect_genre_book_id_book_books')),
-    sa.ForeignKeyConstraint(['id_genre'], ['genres.id_genre'], name=op.f('fk_connect_genre_book_id_genre_genres')),
+    sa.ForeignKeyConstraint(['id_book'], ['books.id_book'], name=op.f('fk_connect_genre_book_id_book_books'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['id_genre'], ['genres.id_genre'], name=op.f('fk_connect_genre_book_id_genre_genres'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id_book', 'id_genre', name=op.f('pk_connect_genre_book'))
     )
     op.create_table('reviews',
@@ -81,8 +81,8 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('id_book', sa.Integer(), nullable=False),
     sa.Column('id_user', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['id_book'], ['books.id_book'], name=op.f('fk_reviews_id_book_books')),
-    sa.ForeignKeyConstraint(['id_user'], ['users.id_user'], name=op.f('fk_reviews_id_user_users')),
+    sa.ForeignKeyConstraint(['id_book'], ['books.id_book'], name=op.f('fk_reviews_id_book_books'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['id_user'], ['users.id_user'], name=op.f('fk_reviews_id_user_users'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id_review', name=op.f('pk_reviews'))
     )
     # ### end Alembic commands ###

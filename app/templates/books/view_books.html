@@ -34,5 +34,22 @@
         </div>
     </div>
     {% endif %}
+    {% if current_user.is_authenticated %}
+        {% if not user_review %}
+            <div class="mt-5">
+                <a href="{{ url_for('write_review', id_book=book.id_book) }}" class="btn btn-dark">Написать рецензию</a>
+            </div>
+        {% else %}
+            <div class="mt-5">
+                <h4>Ваша рецензия</h4>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Оценка: {{ user_review.rating }}/5</h5>
+                        <p class="card-text">{{ user_review.text }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
 </div>
 {% endblock %}

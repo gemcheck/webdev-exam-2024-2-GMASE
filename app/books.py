@@ -20,6 +20,21 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def admin_or_moderator(role):
+    def decorator(func):
+        @wraps(func)
+        def decorated(*args, **kwargs):
+            if role == 'admin' and not current_user.is_admin():
+                flash('У вас недостаточно прав для выполнения данного действия', 'danger')
+            elif role == 'admin_moderator' and not (current_user.is_admin() or current_user.is_moderator()):
+                flash('У вас недостаточно прав для выполнения данного действия', 'danger')
+            else:
+                return func(*args, **kwargs)
+            return redirect(url_for('index')) 
+        return decorated
+    return decorator
+
+
 # Сохрание обложки в таблицу covers
 def save_cover_file(file):
     filename = secure_filename(file.filename)
@@ -55,6 +70,8 @@ def save_cover_file(file):
 
 # Добавление новой книги
 @bp.route('/new_books', methods=['GET', 'POST'])
+@login_required
+@admin_or_moderator('admin')
 def new_books():
     if request.method == 'POST':
         try:
@@ -71,7 +88,7 @@ def new_books():
                 cover_id, cover_data, mimetype = save_cover_file(cover_file)
             else:
                 cover_id = None
-
+            
             short_description_html = bleach.clean(markdown.markdown(short_description), tags=[ 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
 
             new_book = Books(
@@ -109,6 +126,8 @@ def new_books():
 
 # Редактирование книги
 @bp.route('/edit_books/<int:id_book>', methods=['GET', 'POST'])
+@login_required
+@admin_or_moderator('admin_moderator')
 def edit_books(id_book):
     book = db.session.query(Books).get_or_404(id_book)
     
@@ -116,7 +135,7 @@ def edit_books(id_book):
         try:
             book.name_book = request.form['name_book']
             book.year = request.form['year']
-            short_description = bleach.clean(request.form['short_description'])
+            short_description = request.form['short_description']
             book.short_description = bleach.clean(markdown.markdown(short_description), tags=[ 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], attributes={'a': ['href', 'title'], 'img': ['src', 'alt']}, strip=True)
 
             selected_genre_ids = request.form.getlist('genres')
@@ -154,23 +173,20 @@ def view_books(id_book):
         user = db.session.query(Users).filter_by(id_user=review.id_user).first()
         review.username = f"{user.lastname} {user.name}" if user else "Unknown"
 
-    return render_template('books/view_books.html', book=book, reviews=reviews, genres=genres, cover_data=cover_data)
+    user_review = db.session.query(Review).filter_by(id_book=id_book, id_user=current_user.id_user).first() if current_user.is_authenticated else None
+
+    return render_template('books/view_books.html', book=book, reviews=reviews, genres=genres, cover_data=cover_data, user_review=user_review)
 
 # Удаление книги
 @bp.route('<int:id_book>/delete_book', methods=['POST'])
+@login_required
+@admin_or_moderator('admin_moderator')
 def delete_book(id_book):
     book = db.session.query(Books).get_or_404(id_book)
     id_cover = book.id_cover
 
     try:
-        # Обертывание операций удаления в блок with db.session.no_autoflush предотвращает автоматическую 
-        # синхронизацию изменений до тех пор, пока все операции внутри блока не будут завершены. Это необходимо, 
-        # чтобы избежать ошибок, связанных с попытками удаления записей, на которые ссылаются другие записи.
-        with db.session.no_autoflush:
-            db.session.query(Review).filter_by(id_book=id_book).delete()
-            db.session.query(ConnectGenreBook).filter_by(id_book=id_book).delete()
-            db.session.delete(book)
-            
+        db.session.delete(book)
         db.session.commit()
 
         if id_cover:
@@ -192,4 +208,3 @@ def delete_book(id_book):
         flash(str(e), 'danger')
 
     return redirect(url_for('index'))
-

@@ -34,7 +34,7 @@
             </div>
             <div class="form-group mb-3">
                 <label for="short_description">Краткое описание</label>
-                <textarea class="form-control" id="short_description" name="short_description" rows="8">{{ book.short_description if book else '' }}</textarea>
+                <textarea class="form-control" id="short_description" name="short_description" rows="8">{{ book.short_description | safe if book else ''  }}</textarea>
             </div>
             {% if not edit %}
             <div class="form-group mb-3">
@@ -50,7 +50,7 @@
 </div>
 
 <script>
-    var easyMDE = new EasyMDE({ element: document.getElementById('description') });
+    var easyMDE = new EasyMDE({ element: document.getElementById('short_description') });
 </script>
 
 {% endmacro %}
